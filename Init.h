@@ -3,5 +3,7 @@
 #include <stdint.h>
 
 void Init(void);
+void Init2(void);
 
 #endif
+
