@@ -4,6 +4,7 @@
 #include "ST7735.h"
 #include "ADC.h"
 #include "Shoot.h"
+#include "Sound.h"
 
 
 #define Tank_Width 26
@@ -12,15 +13,18 @@
 #define bullet_Width 8
 #define bullet_Height 8
 #define Num_Bullets 10
+#define wallWidth 88
 
 void DisableInterrupts(void); // Disable interrupts
 void EnableInterrupts(void);  // Enable interrupts
 
 int player1Health = 60;
 int player2Health = 60;
+int wall_checkFlag =0;
 
 extern int shootFlag;
 extern int shootFlag2;
+extern int soundToPlay;
 const unsigned short whiteBullet[] = {
  0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF,
  0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF,
@@ -301,6 +305,9 @@ void Init_State(void) {
 	
 	ST7735_FillRect(68, 10, 60, 10, 0x57E0);
 	
+	ST7735_FillRect (40, 68, 88, 3, 0);
+	ST7735_FillRect (0, 160-34, 88, 3, 0);
+	
 	// sets the initial bullet values of the players
 	
 	for (int i = 0; i < Num_Bullets; i++) {
@@ -328,7 +335,7 @@ void UpdatePlayer (player_t* player, uint32_t ADCval[2], player_t* otherPlayer) 
 	
 		if (ADCval[0] > 3600) {
 		player->direction = up;
-		if (player->yCoordinate > (blackHeight + Tank_Height + 8)) {
+		if ((player->yCoordinate > (blackHeight + Tank_Height + 8))&& wall_checkFlag == 0) {
 			 int xDifference = player->xCoordinate - otherPlayer->xCoordinate;
 			 int yDifference = player->yCoordinate - otherPlayer->yCoordinate;
 			
@@ -343,7 +350,7 @@ void UpdatePlayer (player_t* player, uint32_t ADCval[2], player_t* otherPlayer) 
 	
 	if (ADCval[1] > 3600) {
 		player->direction = right;
-		if (player->xCoordinate < (128-Tank_Width)) {
+		if ((player->xCoordinate < (128-Tank_Width))&& wall_checkFlag == 0) {
 			 int xDifference = player->xCoordinate - otherPlayer->xCoordinate;
 			 int yDifference = player->yCoordinate - otherPlayer->yCoordinate;
 			if (xDifference < -(Tank_Width -3) || xDifference >= 0 || (yDifference <= -(Tank_Height-3) || yDifference >= (Tank_Height-3))){ 
@@ -357,7 +364,7 @@ void UpdatePlayer (player_t* player, uint32_t ADCval[2], player_t* otherPlayer) 
 	
 	if (ADCval[0] < 1600) {
 		player->direction = down;
-		if (player->yCoordinate < 160) {
+		if (player->yCoordinate < 160 && wall_checkFlag == 0) {
 			 int xDifference = player->xCoordinate - otherPlayer->xCoordinate;
 			 int yDifference = player->yCoordinate - otherPlayer->yCoordinate;
 					if (yDifference >= 0 || (yDifference < -(Tank_Height-3) || (xDifference <= -(Tank_Width-3) || xDifference >= (Tank_Width-3)))){
@@ -368,7 +375,7 @@ void UpdatePlayer (player_t* player, uint32_t ADCval[2], player_t* otherPlayer) 
 		
 	if (ADCval[1] < 1600) {
 		player->direction = left;
-		if (player->xCoordinate > 0) {
+		if (player->xCoordinate > 0 && wall_checkFlag == 0) {
 		   int xDifference = player->xCoordinate - otherPlayer->xCoordinate;
 			 int yDifference = player->yCoordinate - otherPlayer->yCoordinate;
 			if (xDifference > (Tank_Width -3) || xDifference <= 0 || (yDifference <= -(Tank_Height-3) || yDifference >= (Tank_Height-3))){ 
@@ -403,6 +410,9 @@ void UpdateBullet(player_t *player, int *Flag) {
 		*Flag = 0;
 		player->bullet[i].bulletLife = alive ;
 		player->bullet[i].direction = player-> direction ;
+		
+		
+	Sound_Play (1, 8000) ;
 		
 		if (player->bullet[i].direction == up) {
 			player->bullet[i].xCoordinate = player->xCoordinate + 9 ;
@@ -521,6 +531,7 @@ void CheckPlayerCollision(void){
 				if (xDifference > -(Tank_Width - 5) && xDifference < (bullet_Width-5) && 
 					yDifference > -(bullet_Height-5) && yDifference < (Tank_Height-5)) {
 					// hit player 1
+					 Sound_Play (2, 30000) ;
 					 player1.health -= 12;
 					 player1Health = player1.health;
 					 player2.bullet[i].bulletLife = dead;
@@ -539,27 +550,60 @@ void CheckPlayerCollision(void){
 		
 				if (xDifference > -(Tank_Width - 5) && xDifference < (bullet_Width-5) && 
 					yDifference > -(bullet_Height-5) && yDifference < (Tank_Height-5)) {
-					//hit player 2
+					
+					 Sound_Play (2, 30000) ;
 					 player2.health -= 12;
 					 player2Health = player2.health;
 					 player1.bullet[i].bulletLife = dead;
 					 ST7735_DrawBitmap(player1.bullet[i].xCoordinate, player1.bullet[i].yCoordinate, whiteBullet, bullet_Width, bullet_Height);
 					
-				} 
-
-				
-			
-}
-	
-}
-	
-	
-	
-	
-	
-	
+				} 		
+		}
+	}
 }
 
+void wallCheck(player_t *player, uint32_t ADCval[2]) {
+	// check walls up
+	if (ADCval[0] > 3600){
+		if (((player->xCoordinate <= wallWidth) && (player->yCoordinate -Tank_Height == 129)) || (((player->xCoordinate +Tank_Width)>40) && (player->yCoordinate -Tank_Height ==71))){
+			wall_checkFlag =1;
+		}else {
+			wall_checkFlag =0;
+		}
+	}
+	// check  low wall left
+	if (ADCval[1] < 1600){
+		if ((player->xCoordinate ==wallWidth) && ((player->yCoordinate-Tank_Height<=129) && (player->yCoordinate >= 126))){
+			wall_checkFlag =1;
+		}else {
+			wall_checkFlag =0;
+		}
+	}
+	// check walls down
+	if (ADCval[0] < 1600){
+		if (((player->xCoordinate <= wallWidth) && (player->yCoordinate == 125)) || ((player->xCoordinate +Tank_Width >= 40)&&(player->yCoordinate == 68))){
+			wall_checkFlag =1;
+		}else {
+			wall_checkFlag =0;
+		}
+	}
+	// check top wall right
+	if (ADCval[1] > 3600){
+		if ((player->xCoordinate +Tank_Width == 40) && ((player->yCoordinate>= 68) && (player->yCoordinate-Tank_Height <= 71))){
+			wall_checkFlag =1;
+		}else {
+			wall_checkFlag =0;
+		}
+		
+		
+	}
+	
+	
+	
+	
+	
+	
+}
 
 
 
@@ -568,8 +612,10 @@ void UpdateState(void) {
 	
 	
 	ADC_In67 (ADCval);
+	wallCheck (&player1, ADCval);
 	UpdatePlayer(&player1, ADCval, &player2) ;
 	ADC_In89 (ADCval);
+	wallCheck (&player2, ADCval);
 	UpdatePlayer(&player2, ADCval, &player1) ;
 	
 	
@@ -614,6 +660,11 @@ void Render(void) {
 	}
 		
 	}
+	
+	ST7735_FillRect (40, 68, 88, 3, 0);
+	ST7735_FillRect (0, 160-34, 88, 3, 0);
+	
+	
 	
   if (player1.health != 60) {
 	
