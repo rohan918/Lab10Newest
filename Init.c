@@ -7,7 +7,10 @@
 #include "PLL.h"
 #include "UpdateState.h"
 #include "Shoot.h"
+#include "DAC.h"
+#include "Sound.h"
 
+void test_Sound (void);
 
 void Init (void) {
 	
@@ -15,6 +18,8 @@ void Init (void) {
 	PLL_Init(Bus80MHz);
 	ST7735_InitR(INITR_REDTAB);
 	EdgeCounter_Init();
+	DAC_Init();
+	Sound_Init();
 	
 	
 }
@@ -31,6 +36,7 @@ void Init2 (void) {
 	
 	
 }
+
 
 
 
