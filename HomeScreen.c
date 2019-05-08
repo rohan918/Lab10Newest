@@ -3,9 +3,9 @@
 #include "ST7735.h"
 #include "Shoot.h"
 
-char notReady1[20] = "Player 1 Not Ready";
+char notReady1[20] = "Player 1 not ready";
 
-char notReady2[20] = "Player 2 Not Ready";
+char notReady2[20] = "Player 2 not ready";
 
 char Ready1[20] = "Player 1 Ready!";
 
@@ -87,22 +87,22 @@ void endScreen (int player1, int player2) {
 	ST7735_FillScreen(0);
 	if (player2 == 0) {
 		
-		ST7735_SetCursor(3,6);
-		ST7735_OutString("Player 1 Wins!!");
+		ST7735_SetCursor(1,6);
+		ST7735_OutString("Player 1's a THUG!!");
 		ST7735_SetCursor(3,8);
 		ST7735_OutString("Player 2 sucks");
 		
 		
 		
 	} else {
-		ST7735_SetCursor(3,6);
-		ST7735_OutString("Player 2 Wins!!");
+		ST7735_SetCursor(1,6);
+		ST7735_OutString("Player 2's a THUG!!");
 		ST7735_SetCursor(3,8);
 		ST7735_OutString("Player 1 sucks");
 		
 	}
 	
-	ST7735_SetCursor(1,10);
+	ST7735_SetCursor(1,12);
 	ST7735_OutString("Reset to play again");
 	
 	
